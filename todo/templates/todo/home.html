@@ -1,0 +1,251 @@
+{% extends 'todo/base.html' %}
+
+{% block title %}TodoMaster - Home{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Header Section -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-dark mb-3">
+            <i class="bi bi-check2-circle text-primary me-3"></i>
+            Welcome to TodoMaster
+        </h1>
+        <p class="lead text-muted">Organize your tasks, boost your productivity, and achieve your goals!</p>
+    </div>
+
+    {% if user.is_authenticated %}
+        <!-- Authenticated User Content -->
+        
+        <!-- Statistics Cards -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number">{{ total_todos }}</div>
+                    <div class="stats-label">Total Tasks</div>
+                    <i class="bi bi-list-task fs-1 mt-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <div class="stats-number">{{ pending_todos }}</div>
+                    <div class="stats-label">Pending</div>
+                    <i class="bi bi-clock fs-1 mt-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <div class="stats-number">{{ completed_todos }}</div>
+                    <div class="stats-label">Completed</div>
+                    <i class="bi bi-check-circle fs-1 mt-2"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    <div class="stats-number">{{ overdue_todos }}</div>
+                    <div class="stats-label">Overdue</div>
+                    <i class="bi bi-exclamation-triangle fs-1 mt-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Add Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-lightning text-warning me-2"></i>
+                            Quick Add Task
+                        </h5>
+                        <form method="post" action="{% url 'todo:quick_add' %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="title" class="form-control" placeholder="What needs to be done?" required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>Add
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8 text-center">
+                <a href="{% url 'todo:todo_create' %}" class="btn btn-primary btn-lg me-3">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Task
+                </a>
+                <a href="{% url 'todo:todo_list' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-list-task me-2"></i>View All Tasks
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Tasks -->
+        {% if recent_todos %}
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clock-history text-primary me-2"></i>
+                            Recent Tasks
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for todo in recent_todos %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card todo-item {% if todo.status == 'completed' %}completed{% endif %} {% if todo.is_overdue %}overdue{% endif %}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0">{{ todo.title }}</h6>
+                                            <div class="d-flex gap-1">
+                                                {% if todo.priority == 'high' %}
+                                                    <span class="priority-badge bg-danger text-white">High</span>
+                                                {% elif todo.priority == 'medium' %}
+                                                    <span class="priority-badge bg-warning text-white">Medium</span>
+                                                {% else %}
+                                                    <span class="priority-badge bg-success text-white">Low</span>
+                                                {% endif %}
+                                                
+                                                {% if todo.status == 'completed' %}
+                                                    <span class="status-badge bg-success text-white">Done</span>
+                                                {% elif todo.status == 'in_progress' %}
+                                                    <span class="status-badge bg-warning text-white">In Progress</span>
+                                                {% else %}
+                                                    <span class="status-badge bg-secondary text-white">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        {% if todo.description %}
+                                            <p class="card-text text-muted small">{{ todo.description|truncatewords:10 }}</p>
+                                        {% endif %}
+                                        
+                                        {% if todo.due_date %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar me-1"></i>
+                                                Due: {{ todo.due_date|date:"M d, Y H:i" }}
+                                            </small>
+                                        {% endif %}
+                                        
+                                        <div class="mt-3">
+                                            <a href="{% url 'todo:todo_update' todo.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                            <a href="{% url 'todo:toggle_status' todo.pk %}" class="btn btn-sm btn-outline-success">
+                                                {% if todo.status == 'completed' %}
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
+                                                {% else %}
+                                                    <i class="bi bi-check me-1"></i>Complete
+                                                {% endif %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Guest User Content -->
+        
+        <!-- Welcome Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8 text-center">
+                <div class="card">
+                    <div class="card-body p-5">
+                        <i class="bi bi-check2-circle text-primary" style="font-size: 4rem;"></i>
+                        <h3 class="mt-3 mb-3">Get Started with TodoMaster</h3>
+                        <p class="text-muted mb-4">Join thousands of users who have transformed their productivity with our powerful task management tool.</p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'todo:register' %}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-person-plus me-2"></i>Create Account
+                            </a>
+                            <a href="{% url 'todo:login' %}" class="btn btn-outline-primary btn-lg">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-body text-center p-4">
+                        <h5 class="card-title mb-4">Why Choose TodoMaster?</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="text-center">
+                                    <i class="bi bi-lightning-charge text-warning fs-1 mb-3"></i>
+                                    <h6>Quick & Easy</h6>
+                                    <p class="text-muted small">Add tasks in seconds with our streamlined interface</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="text-center">
+                                    <i class="bi bi-graph-up text-success fs-1 mb-3"></i>
+                                    <h6>Track Progress</h6>
+                                    <p class="text-muted small">Monitor your productivity with detailed statistics</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="text-center">
+                                    <i class="bi bi-shield-check text-primary fs-1 mb-3"></i>
+                                    <h6>Stay Organized</h6>
+                                    <p class="text-muted small">Never miss a deadline with smart reminders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Features Section (for authenticated users) -->
+    {% if user.is_authenticated %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-body text-center p-4">
+                    <h5 class="card-title mb-4">Why Choose TodoMaster?</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-lightning-charge text-warning fs-1 mb-3"></i>
+                                <h6>Quick & Easy</h6>
+                                <p class="text-muted small">Add tasks in seconds with our streamlined interface</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-graph-up text-success fs-1 mb-3"></i>
+                                <h6>Track Progress</h6>
+                                <p class="text-muted small">Monitor your productivity with detailed statistics</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-shield-check text-primary fs-1 mb-3"></i>
+                                <h6>Stay Organized</h6>
+                                <p class="text-muted small">Never miss a deadline with smart reminders</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
